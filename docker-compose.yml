@@ -20,7 +20,8 @@ services:
   api:
     build: .
     environment:
-      DB_DSN: "host=db port=5432 dbname=empleados_db user=postgres password=123456"
+      DB_DSN: "host=dpg-db8fe4l9fdbs739d0flg-a.oregon-postgres.render.com port=5432 dbname=postgresql_p9vb user=admin password=1GYO44KyGugWzFxIBeS1H5aQQNcW35Oi sslmode=require"
+
     ports:
       - "8091:8091"
     depends_on:
