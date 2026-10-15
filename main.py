@@ -19,6 +19,7 @@ DB_DSN = os.getenv(
     "host=dpg-db8fe4l9fdbs739d0flg-a.oregon-postgres.render.com port=5432 dbname=postgresql_p9vb user=admin password=1GYO44KyGugWzFxIBeS1H5aQQNcW35Oi",
 )
 
+
 app = FastAPI(
     title="API Empleados",
     description="Consulta de empleados con su cargo (vista empleado_cargo_view)",
