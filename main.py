@@ -8,10 +8,15 @@ from fastapi import FastAPI, HTTPException
 from fastapi.responses import RedirectResponse
 from psycopg.rows import dict_row
 from pydantic import BaseModel
-
+'''
 DB_DSN = os.getenv(
     "DB_DSN",
     "host=localhost port=5432 dbname=empleados_db user=postgres password=123456",
+)
+'''
+DB_DSN = os.getenv(
+    "DB_DSN",
+    "host=dpg-db8fe4l9fdbs739d0flg-a.oregon-postgres.render.com port=5432 dbname=postgresql_p9vb user=admin password=1GYO44KyGugWzFxIBeS1H5aQQNcW35Oi",
 )
 
 app = FastAPI(
