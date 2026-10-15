@@ -1,0 +1,86 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_DB: empleados_db
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: 123456
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d empleados_db"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 10
+
+    env:
+      DB_DSN: "host=localhost port=5432 dbname=empleados_db user=postgres password=123456"
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Instalar dependencias
+        run: pip install -r requirements.txt
+
+      - name: Crear tablas y vistas
+        env:
+          PGPASSWORD: "123456"
+        run: psql -h localhost -U postgres -d empleados_db -v ON_ERROR_STOP=1 -f schema.sql
+
+      - name: Levantar API y probar /empleados
+        run: |
+          uvicorn main:app --host 127.0.0.1 --port 8091 &
+          for i in $(seq 1 20); do
+            curl -sf http://127.0.0.1:8091/openapi.json > /dev/null && break
+            sleep 1
+          done
+          curl -sf http://127.0.0.1:8091/empleados | tee response.json
+          python -c "import json; d = json.load(open('response.json')); assert len(d) == 5, d"
+
+  docker:
+    needs: test
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: docker/setup-buildx-action@v3
+
+      - name: Login a GitHub Container Registry
+        if: github.event_name == 'push'
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build (y push en main)
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: ${{ github.event_name == 'push' }}
+          tags: |
+            ghcr.io/${{ github.repository_owner }}/appempleado:latest
+            ghcr.io/${{ github.repository_owner }}/appempleado:${{ github.sha }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
